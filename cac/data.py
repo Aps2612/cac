@@ -63,11 +63,15 @@ def seed(n_customers: int = 5000, seed: int = 7) -> dict:
                                rng.choice(CATEGORIES)))
 
     conn = connect()
-    init_db(conn)
-    conn.execute("DELETE FROM orders")
-    conn.execute("DELETE FROM customers")
-    conn.executemany("INSERT INTO customers VALUES (?, ?, ?, ?, ?)", customers)
-    conn.executemany("INSERT INTO orders VALUES (?, ?, ?, ?, ?)", orders)
-    conn.commit()
-    conn.close()
+    try:
+        init_db(conn)
+        # Clear in FK-safe order (children before parents) so re-seeding an
+        # already-populated DB never trips the customers foreign keys.
+        for table in ("decisions", "measurements", "customer_profiles", "orders", "customers"):
+            conn.execute(f"DELETE FROM {table}")
+        conn.executemany("INSERT INTO customers VALUES (?, ?, ?, ?, ?)", customers)
+        conn.executemany("INSERT INTO orders VALUES (?, ?, ?, ?, ?)", orders)
+        conn.commit()
+    finally:
+        conn.close()
     return {"customers": len(customers), "orders": len(orders)}

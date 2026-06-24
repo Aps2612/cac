@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 
-from . import data, pipeline
+from . import data, pipeline, web
 from .db import connect, reset_db
 
 
@@ -62,6 +62,10 @@ def cmd_reset(args: argparse.Namespace) -> None:
     print("database reset (cac.db removed)")
 
 
+def cmd_serve(args: argparse.Namespace) -> None:
+    web.serve(args.host, args.port)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="cac", description="Customer decisioning pipeline (mini)")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -74,6 +78,11 @@ def main() -> None:
     sub.add_parser("run", help="run the decisioning pipeline").set_defaults(func=cmd_run)
     sub.add_parser("show", help="show the latest run's cohorts + lift").set_defaults(func=cmd_show)
     sub.add_parser("reset", help="delete the database").set_defaults(func=cmd_reset)
+
+    p_serve = sub.add_parser("serve", help="start the minimal web UI")
+    p_serve.add_argument("--host", default="127.0.0.1")
+    p_serve.add_argument("--port", type=int, default=8000)
+    p_serve.set_defaults(func=cmd_serve)
 
     args = parser.parse_args()
     args.func(args)
