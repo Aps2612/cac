@@ -1,30 +1,52 @@
 # CAC mini
 
-A single-file demo of a customer **decisioning layer**: for every customer, decide the
-single best next action — an offer on their channel, or *stay quiet* — then prove it
-worked by measuring **incremental lift** against a randomly held-out control group.
+A small **customer decisioning** pipeline: for every customer, decide the single best
+next action — an offer on their channel, or *stay quiet* — then prove it worked by
+measuring **incremental lift** against a randomly held-out control group.
+
+Backed by a real database with real SQL (**SQLite**, file-based — nothing to install or
+run). No external dependencies.
 
 ## Run
 
 ```bash
-python3 main.py
+python -m cac.cli seed     # generate + load synthetic customers and orders
+python -m cac.cli run      # profile -> cohort -> strategy -> govern -> measure
+python -m cac.cli show     # reprint the latest run's cohorts + lift
+python -m cac.cli reset    # delete the database
 ```
 
-No dependencies. Python 3.10+ standard library only. Everything lives in `main.py`.
+Poke around the data directly:
 
-## The pipeline (all in `main.py`)
+```bash
+sqlite3 cac.db "SELECT cohort, COUNT(*) FROM decisions GROUP BY cohort ORDER BY 2 DESC;"
+```
 
-1. **generate + profile** — synthesize each customer's R/F/M (Recency, Frequency, Monetary).
-2. **cohort** — an RFM ladder (first rule that matches wins) puts each buyer in one archetype.
-3. **strategy** — a rule per cohort picks the offer, or decides to *stay quiet*.
-4. **personalize** — resolve the specifics (the offer code) per customer.
-5. **govern** — skip anyone without consent; randomly hold out 15% as a control.
-6. **simulate** — control gets base purchase odds; treatment gets a relevance-based uplift.
-7. **measure** — compare treatment vs control conversion with a two-proportion z-test.
+## Layout — one module per pipeline stage
 
-The output prints each cohort's size and plan, then the incremental lift overall and
-per cohort (treatment rate, control rate, lift in percentage points, and a p-value).
+| File | Stage | What it does |
+|------|-------|--------------|
+| `cac/db.py` | — | SQLite connection + schema (the tables) |
+| `cac/data.py` | 1. ingest | Generate + load synthetic customers and orders |
+| `cac/profile.py` | 2. profile | SQL aggregates orders into per-customer RFM |
+| `cac/cohort.py` | 3. cohort | RFM ladder (first match wins) → one archetype each |
+| `cac/strategy.py` | 4. strategy | A plan per cohort (rule table; an LLM would slot in here) |
+| `cac/govern.py` | 5-6. personalize + govern | Offer code, consent check, control holdout |
+| `cac/measure.py` | 7-8. simulate + measure | Simulate outcomes, then lift + two-proportion z-test |
+| `cac/pipeline.py` | — | Orchestrates a run and persists results |
+| `cac/cli.py` | — | `seed` / `run` / `show` / `reset` |
 
-> A production version would swap the synthetic data for real event streams, the rule
-> table for an LLM call per cohort, and the simulated outcomes for real conversions —
-> but the decisioning logic is exactly what's here.
+## Tests
+
+```bash
+python -m pytest
+```
+
+Covers the cohort ladder and the lift math (no database required).
+
+## Demo vs. production
+
+A production version would swap the synthetic generator for real event streams, the
+rule table in `strategy.py` for an LLM call per cohort, SQLite for Postgres, and the
+simulated outcomes for real conversions — but the decisioning logic is exactly what's
+here.
