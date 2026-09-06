@@ -1,127 +1,105 @@
-# CAC — Architecture & Layering
+# Architecture
 
-A small, dependency-free customer-decisioning pipeline. One SQLite file, Python
-stdlib only. The architecture answers one question honestly:
-**"Did messaging customers actually *cause* more purchases?"**
+The product is a decision layer over a brand's existing tools: for each customer,
+every day, choose the single best action, send it on the brand's own channels, and
+measure the extra revenue it caused. This document explains *why* the system is
+shaped the way it is.
 
----
+## Design goals (in priority order)
 
-## The layered data architecture
+1. **Simple to read, run, and explain.** One SQLite file, one module per step,
+   plain synchronous code. The idea is the product, not the plumbing.
+2. **AI cost bounded, not per-customer.** Intelligence is expensive; spend it only
+   where it changes the decision.
+3. **Honest by construction.** Report *caused* revenue (control group + z-test),
+   not correlation. Everything reproducible.
+4. **Safe.** The AI proposes; deterministic code disposes, behind hard rules.
 
-The whole system is organized as **layers**, each one a table in `cac.db`, and
-each layer is derived *purely* from the layer below it (bronze → silver → gold).
+## The pipeline
 
 ```
-                        ┌─────────────────────────────────────────────┐
-                        │                 ENTRY POINTS                  │
-                        │   CLI (cac/cli.py)   ≡   Web (cac/web.py)      │
-                        │        seed · run · show · reset · serve      │
-                        └───────────────┬───────────────┬───────────────┘
-                                        │               │
-                                  seed()│               │run()
-                                        ▼               ▼
-┌───────────────────────────────────────────────────────────────────────────┐
-│ LAYER 1 — RAW            (what a brand's systems would stream in)           │
-│ ─────────────────────────────────────────────────────────────────────────  │
-│   customers (id, signup, email_open_rate, consent, opted_out)              │
-│   orders    (id, customer_id → customers, days_ago, amount, category)      │
-│   source: cac/data.py  ·  written by: seed()                               │
-└───────────────────────────────────┬───────────────────────────────────────┘
-                                     │  build_profiles()  (SQL rollup)
-                                     ▼
-┌───────────────────────────────────────────────────────────────────────────┐
-│ LAYER 2 — PROFILE        (one clean RFM row per customer)                   │
-│ ─────────────────────────────────────────────────────────────────────────  │
-│   customer_profiles (customer_id, recency_days, order_count, monetary,     │
-│                      top_category)                                         │
-│   source: cac/profile.py                                                   │
-│   R = recency · F = order_count · M = monetary                             │
-└───────────────────────────────────┬───────────────────────────────────────┘
-                                     │  cohort → strategy → govern → simulate
-                                     ▼
-┌───────────────────────────────────────────────────────────────────────────┐
-│ LAYER 3 — DECISION       (one decision per targeted customer, per run)      │
-│ ─────────────────────────────────────────────────────────────────────────  │
-│   decisions (run_id, customer_id, cohort, holdout_group,                   │
-│              discount, offer_code, converted, revenue)                     │
-│   built by: cac/pipeline.py  using:                                        │
-│     • cohort.py   — RFM ladder, first match wins                           │
-│     • strategy.py — offer + message angle per cohort                       │
-│     • govern.py   — consent, discount cap, treatment/control holdout       │
-│     • measure.py  — converts() simulates the outcome                       │
-└───────────────────────────────────┬───────────────────────────────────────┘
-                                     │  measure()  (lift + two-proportion z-test)
-                                     ▼
-┌───────────────────────────────────────────────────────────────────────────┐
-│ LAYER 4 — MEASUREMENT    (the lift scoreboard, per run)                     │
-│ ─────────────────────────────────────────────────────────────────────────  │
-│   measurements (run_id, scope, label, t_n, t_c, c_n, c_c,                  │
-│                 treat_rate, ctrl_rate, abs_lift, p_value)                  │
-│   source: cac/measure.py                                                   │
-│   lift = treatment_rate − control_rate   ·   p_value = is it real?         │
-└───────────────────────────────────────────────────────────────────────────┘
+generate → profile → triage → doors → send(safety + personalize) → measure
+ STEP 1     STEP 2    STEP 3   STEP 4        STEP 5–6                STEP 7
 ```
 
----
+Each step is one function that runs one or two **set-based SQL statements** over a
+wide `profiles` table (one row per customer, each step fills its own columns).
+Set-based means the cost is ~constant per step regardless of headcount — 240k
+customers run in ~2 seconds locally.
 
-## The pipeline as 8 stages
+### STEP 1 — data in (`generate.py`)
+Synthesises customers with hidden behavioural segments (champions, lapsing VIPs,
+one-and-done, prospects…) plus channel habits and price sensitivity. The pipeline
+never sees the hidden segments — it re-derives everything from orders, keeping the
+demo honest. In production this module is replaced by the brand's real feed.
 
-`run()` (in `cac/pipeline.py`) walks every profiled customer through one chain:
+### STEP 2 — understand (`profile.py`)
+One pass computes RFM (recency, frequency, monetary, top category). A second
+derives the human traits the rest of the system reasons about: **lifecycle**
+(prospect/active/drifting/gone), **buyer type** (full-price/mixed/discount-seeker),
+**preferred channel**, **reorder cycle**, and a **baseline buy probability**.
 
-| # | Stage        | Module        | What it does                                              |
-|---|--------------|---------------|-----------------------------------------------------------|
-| 0 | Ingest       | `data.py`     | Generate + load synthetic customers and orders (`seed`).  |
-| 1 | Profile      | `profile.py`  | SQL rolls orders into one RFM row per customer.           |
-| 2 | VIP bar      | `cohort.py`   | 75th-percentile spend → adaptive "VIP" threshold.         |
-| 3 | Cohort       | `cohort.py`   | Sort into one RFM archetype (first match wins).           |
-| 4 | Strategy     | `strategy.py` | Each cohort → fixed discount + message angle.             |
-| 5 | Personalize  | `govern.py`   | Build the per-customer offer code.                        |
-| 6 | Govern       | `govern.py`   | Drop no-consent/opted-out, cap discount, split T/C.       |
-| 7 | Simulate     | `measure.py`  | Model who *would* buy (prod reads real sales here).       |
-| 8 | Measure      | `measure.py`  | Lift + p-value per cohort and overall.                    |
+### STEP 3 — triage (`triage.py`)
+Most customers need nothing today. Cheap SQL keeps only those crossing a real
+threshold now — a product about to run out, someone gone quiet, an abandoned cart
+— which is a few percent of the base. The **safety gate** (consent, not opted out,
+under the daily frequency cap) is applied here, *before* any AI cost is spent. This
+~98% drop is what makes the economics work.
 
----
+### STEP 4 — the decision engine / three doors (`doors.py`, `llm.py`)
+The core cost-control idea: **think once for a whole group, save the plan, reuse it
+free.**
 
-## Key design principles
+- **Door 1 (reuse):** a saved plan for this (reason × buyer-type) already exists →
+  apply it. No AI.
+- **Door 2 (new group):** no plan yet → the AI writes one plan for the whole group,
+  once → cached in the `plans` table.
+- **Door 3 (rare VIP):** a per-person AI decision for a few very high-value
+  customers, hard-capped by budget.
 
-- **Layer purity** — each layer is rebuilt only from the one below, so the
-  pipeline never "cheats" by reading the synthetic segment labels.
-- **One module per stage** — single responsibility; easy to read and test.
-- **`run_id` per run** — every run is an immutable, queryable experiment record.
-- **Reproducibility by design** — `seed` fixes the data; `govern._frac()` uses
-  deterministic SHA-256 hashing (not live RNG) for holdout + conversion, so the
-  same input always yields identical, auditable output.
-- **Core ≡ interface** — CLI and Web are thin front-ends over the same
-  functions; no logic lives in the UI.
-- **Honest measurement** — a 15% never-messaged **control** holdout is the
-  counterfactual; lift = treatment − control; a two-proportion z-test
-  (`p_value`) says whether the lift is real or just noise.
+Because `plans` **persists across runs**, the first run authors plans and every
+later run is almost entirely Door 1. Which door a customer took is simply whether
+their plan was authored *this* run. Without an API key, a deterministic rule author
+stands in for the LLM so the system always runs.
 
----
+A plan is a mini-playbook: suppress?, discount, channel rule, headline, body (with
+a `{product}` placeholder). The LLM writes good plans because we feed it encoded
+retention expertise (e.g. *never discount a full-price buyer*).
 
-## The 7 cohorts (RFM ladder, first match wins)
+### STEP 5–6 — safety then send (`send.py`)
+Safety first: full-price buyers are forced to 0 discount; anything invalid is
+blocked (plan suppressed, no consented channel, out of stock, discount over cap).
+Then the message is personalised (real product + channel the customer reads), a
+random **control group** is held back, and the outcome is simulated. All randomness
+is `md5(prefix + customer_id)` → reproducible.
 
-| Cohort                | Rough meaning                  | Offer                         |
-|-----------------------|--------------------------------|-------------------------------|
-| `loyal_regular`       | Bought 3+, very recent         | Stay quiet (suppress)         |
-| `lapsing_vip`         | High spender, cooling off      | Strong win-back               |
-| `at_risk_first_timer` | One order, 14–75 days ago      | Nudge second purchase         |
-| `one_and_done`        | One order, long ago            | Re-engage                     |
-| `repeat_winback`      | Bought 2+, gone quiet          | "Time to restock?"            |
-| `dormant_winback`     | Silent 6+ months               | Last strong attempt           |
-| `recent_nurture`      | Other recent buyers            | Nurture, no discount          |
+### STEP 7 — measure (`measure.py`)
+For the shortlist overall and per reason: treatment buy-rate vs control buy-rate =
+absolute lift, with a two-proportion z-test p-value. Counts come from SQL; the tiny
+statistics are done in Python.
 
-Prospects (0 orders) are skipped — they aren't relevant to a reactivation goal.
+## Data model (one SQLite file)
 
----
+| Table | Role |
+|-------|------|
+| `customers`, `orders` | STEP 1 raw data |
+| `profiles` | one wide row per customer; STEPS 2–4 fill columns |
+| `plans` | the persistent saved-plan cache (survives runs → the feedback loop) |
+| `decisions` | one decision per shortlisted customer per run |
+| `measurements`, `runs` | the lift scoreboard and run log |
 
-## The honest scope
+## Observations & decisions
 
-- Conversions in stage 7 are **simulated**, so lift *magnitudes* are invented —
-  the genuine part is the **method** (holdout → lift → significance).
-- Cohort thresholds and offers are **hardcoded heuristics**, not learned.
-- Single-file SQLite, single run — a teaching/reference model, not a system
-  built for scale or concurrency.
-
-What it *is* good for: a runnable mental model and a reference architecture whose
-raw → profile → decision → measure shape mirrors real production pipelines.
+- **Triage is the real lever.** The savings come from dropping ~98% of customers
+  before any model runs — not from a cheaper model.
+- **The cache is the moat.** Persisting plans turns AI from a per-message cost into
+  a one-off authoring cost; STEP 7's results feed back to improve future plans.
+- **Full-price protection is a hard rule, not a suggestion.** Discounting a loyal
+  full-price buyer trains them to wait for sales — the "no discount for Meera" case
+  is encoded so the AI can't override it.
+- **Safety is a separate gate.** Keeping validation as deterministic code after the
+  decision means the AI never sends anything on its own, and cost caps prevent
+  runaway bills.
+- **SQLite is a feature here.** Zero setup, one file, trivially reproducible. The
+  code is set-based, so a future move to Postgres for true multi-million scale is a
+  driver swap, not a redesign.
