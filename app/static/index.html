@@ -169,7 +169,7 @@ async function doGenerate(){ if(busy)return; setBusy(true,"Generating brand data
   }catch(e){ setBusy(false,"Error: "+e.message); } }
 
 async function doRun(){ if(busy)return; setBusy(true,"Running the seven steps…");
-  try{ await api("/api/run"); setBusy(false,"Done. Read the results below."); refresh(); }
+  try{ await api("/api/run", {}); setBusy(false,"Done. Read the results below."); refresh(); }
   catch(e){ setBusy(false,"Error: "+e.message+" — generate data first?"); } }
 
 async function doReset(){ if(busy)return; await api("/api/reset",{}); setBusy(false,"Reset."); refresh(); }
