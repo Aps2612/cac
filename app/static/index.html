@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CAC — the decisioning brain</title>
+<style>
+  :root {
+    --bg:#f6f7fb; --card:#ffffff; --ink:#111827; --mut:#6b7280; --line:#e5e7eb;
+    --blue:#2563eb; --bluebg:#eff4ff; --orange:#d97706; --orangebg:#fff7ed;
+    --red:#dc2626; --redbg:#fef2f2; --green:#059669; --greenbg:#ecfdf5;
+    --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.1);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+    font:14.5px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  a { color:var(--blue); }
+  .wrap { max-width:1120px; margin:0 auto; padding:26px 20px 90px; }
+  header.hero { padding:14px 0 6px; }
+  .hero h1 { font-size:26px; margin:0 0 6px; letter-spacing:-.02em; }
+  .hero p { color:var(--mut); margin:0; max-width:760px; }
+  .legend { display:flex; gap:16px; flex-wrap:wrap; margin:14px 0 0; font-size:12.5px; }
+  .legend span { display:inline-flex; align-items:center; gap:7px; color:var(--mut); }
+  .dot { width:10px; height:10px; border-radius:3px; display:inline-block; }
+  .dot.blue{background:var(--blue)} .dot.orange{background:var(--orange)} .dot.red{background:var(--red)}
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px;
+    box-shadow:var(--shadow); padding:18px; }
+  .bar { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin:18px 0; }
+  .field { display:flex; flex-direction:column; gap:5px; }
+  .field label { font-size:12px; color:var(--mut); }
+  input { border:1px solid var(--line); border-radius:9px; padding:9px 11px; font-size:14px; width:150px; background:#fff; }
+  button { border:1px solid var(--line); background:#fff; border-radius:9px; padding:10px 15px;
+    font-size:14px; font-weight:550; cursor:pointer; }
+  button:hover:not(:disabled){ border-color:var(--blue); color:var(--blue); }
+  button.primary{ background:var(--blue); border-color:var(--blue); color:#fff; }
+  button.primary:hover:not(:disabled){ color:#fff; opacity:.94; }
+  button:disabled{ opacity:.5; cursor:not-allowed; }
+  .badge{ font-size:12px; padding:3px 9px; border-radius:999px; border:1px solid var(--line); color:var(--mut); }
+  .badge.on{ color:var(--green); border-color:#a7f3d0; background:var(--greenbg); }
+  .status{ color:var(--mut); font-size:13px; min-height:18px; margin-left:auto; }
+  .kpis{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:6px 0 22px; }
+  .kpi{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; box-shadow:var(--shadow); }
+  .kpi .k{ font-size:12px; color:var(--mut); } .kpi .v{ font-size:24px; font-weight:700; margin-top:3px; letter-spacing:-.02em; }
+  h2.sec{ font-size:16px; margin:30px 0 12px; }
+  .muted{ color:var(--mut); }
+  /* steps */
+  .steps{ display:grid; gap:10px; }
+  .step{ display:grid; grid-template-columns:44px 1fr 250px; gap:14px; align-items:stretch;
+    background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; box-shadow:var(--shadow); }
+  .step .num{ width:34px; height:34px; border-radius:9px; display:grid; place-items:center; font-weight:700; color:#fff; }
+  .num.blue{background:var(--blue)} .num.orange{background:var(--orange)} .num.red{background:var(--red)}
+  .step h3{ margin:0 0 3px; font-size:15px; } .step .d{ color:var(--mut); font-size:13px; }
+  .step .out{ font-size:13px; }
+  .step .out b{ font-size:19px; letter-spacing:-.01em; }
+  .side{ border-left:1px solid var(--line); padding-left:14px; font-size:12.5px; color:var(--mut); }
+  .tag{ font-size:11px; padding:1px 7px; border-radius:999px; margin-left:6px; }
+  .tag.blue{background:var(--bluebg);color:var(--blue)} .tag.orange{background:var(--orangebg);color:var(--orange)} .tag.red{background:var(--redbg);color:var(--red)}
+  /* funnel */
+  .funnel{ display:flex; gap:8px; align-items:stretch; }
+  .fbar{ border-radius:10px; padding:12px 14px; color:#fff; min-width:90px; }
+  .fbar .n{ font-size:20px; font-weight:700; } .fbar .l{ font-size:12px; opacity:.92; }
+  /* doors */
+  .doors{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .door{ border:1px solid var(--line); border-radius:12px; padding:16px; background:var(--card); box-shadow:var(--shadow); }
+  .door .t{ font-weight:650; margin-bottom:2px; } .door .n{ font-size:26px; font-weight:750; letter-spacing:-.02em; }
+  .door.d1{ border-top:3px solid var(--blue); } .door.d2{ border-top:3px solid var(--orange); } .door.d3{ border-top:3px solid var(--red); }
+  /* hero result */
+  .result{ display:grid; grid-template-columns:1.3fr 1fr 1fr 1fr; gap:12px; }
+  .result .big .v{ font-size:34px; color:var(--green); font-weight:750; }
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th,td{ text-align:right; padding:8px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th:first-child,td:first-child{ text-align:left; }
+  th{ color:var(--mut); font-weight:550; font-size:12px; }
+  code{ background:#f3f4f6; padding:1px 6px; border-radius:6px; font-size:12px; }
+  /* spotlight */
+  .spot{ display:grid; grid-template-columns:1fr; gap:0; }
+  .spot .who{ display:flex; gap:14px; align-items:baseline; flex-wrap:wrap; margin-bottom:10px; }
+  .spot .who .nm{ font-size:20px; font-weight:700; }
+  .trace{ display:grid; gap:8px; }
+  .trace .t{ display:grid; grid-template-columns:26px 1fr; gap:12px; align-items:start; }
+  .trace .t .n{ width:22px; height:22px; border-radius:6px; color:#fff; display:grid; place-items:center; font-size:12px; font-weight:700; }
+  .msg{ background:var(--greenbg); border:1px solid #a7f3d0; border-radius:10px; padding:12px 14px; margin-top:6px; }
+  .plans{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; }
+  .plan{ border:1px solid var(--line); border-radius:12px; padding:14px; background:var(--card); box-shadow:var(--shadow); }
+  .plan .top{ display:flex; justify-content:space-between; gap:8px; margin-bottom:6px; }
+  .pill{ font-size:11px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); color:var(--mut); }
+  .pill.llm{ color:var(--orange); background:var(--orangebg); border-color:#fed7aa; }
+  .pill.rule{ color:var(--blue); background:var(--bluebg); border-color:#bfdbfe; }
+  .pill.sup{ color:var(--red); background:var(--redbg); border-color:#fecaca; }
+  .obs{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .obs .o{ border:1px solid var(--line); border-left:3px solid var(--blue); border-radius:10px; padding:12px 14px; background:var(--card); }
+  .obs .o b{ display:block; margin-bottom:3px; }
+  @media (max-width:820px){ .kpis,.result,.doors,.obs{grid-template-columns:1fr 1fr} .step{grid-template-columns:44px 1fr} .side{display:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <h1>CAC — the decisioning brain</h1>
+      <span id="llm" class="badge">llm: …</span>
+    </div>
+    <p>A brain that sits on top of a skincare brand's tools and decides, for each customer every day,
+       the single best thing to do — then proves it drove real extra revenue.</p>
+    <div class="legend">
+      <span><i class="dot blue"></i> ordinary code — most of the system, basically free</span>
+      <span><i class="dot orange"></i> an AI judgment — rare and deliberate, the costly part</span>
+      <span><i class="dot red"></i> a safety check — protects customer &amp; brand</span>
+    </div>
+  </header>
+
+  <div class="card">
+    <div class="bar" style="margin:0">
+      <div class="field"><label for="customers">Customers</label><input id="customers" type="number" value="240000" min="1" /></div>
+      <div class="field"><label for="seed">Seed</label><input id="seed" type="number" value="7" /></div>
+      <button id="b-gen" onclick="doGenerate()">1 · Generate brand data</button>
+      <button id="b-run" class="primary" onclick="doRun()">Run the daily decision →</button>
+      <button id="b-reset" onclick="doReset()">Reset</button>
+      <span id="status" class="status"></span>
+    </div>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <h2 class="sec">The seven steps <span class="muted" id="runid"></span></h2>
+  <div class="steps" id="steps"></div>
+
+  <h2 class="sec">Today's decision funnel</h2>
+  <div class="card"><div class="funnel" id="funnel"><span class="muted">Run to see the funnel.</span></div></div>
+
+  <h2 class="sec">STEP 4 · the three doors <span class="muted">— AI is rare; plans are reused</span></h2>
+  <div class="doors" id="doors"></div>
+
+  <h2 class="sec">STEP 7 · did it work?</h2>
+  <div class="result" id="result"></div>
+  <div class="card" style="margin-top:12px"><div id="reasons"><span class="muted">No run yet.</span></div></div>
+
+  <h2 class="sec">Watch one customer</h2>
+  <div class="card"><div id="spotlight"><span class="muted">Run to trace a real customer through all 7 steps.</span></div></div>
+
+  <h2 class="sec">Saved plans <span class="muted">— the playbooks, written once, reused free</span></h2>
+  <div class="plans" id="plans"><span class="muted">No plans yet.</span></div>
+
+  <h2 class="sec">Observations &amp; design notes</h2>
+  <div class="obs" id="obs"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let busy = false;
+const fmt = n => (n ?? 0).toLocaleString();
+const pct = x => (100*(x ?? 0)).toFixed(1) + "%";
+const pp  = x => (x>=0?"+":"") + (100*x).toFixed(2) + "pp";
+
+async function api(path, body) {
+  const opt = body!==undefined ? {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)} : {};
+  const r = await fetch(path, opt);
+  if (!r.ok) throw new Error((await r.json().catch(()=>({}))).detail || r.status);
+  return r.json();
+}
+function setBusy(b, msg){ busy=b; ["b-gen","b-run","b-reset"].forEach(i=>$(i).disabled=b); if(msg!==undefined)$("status").textContent=msg; }
+
+async function health(){ try{ const h=await api("/api/health"); const on=h.llm==="claude";
+  $("llm").textContent="llm: "+(on?"Claude ("+h.model+")":"rule fallback"); $("llm").className="badge"+(on?" on":""); }catch{} }
+
+async function doGenerate(){ if(busy)return; setBusy(true,"Generating brand data…");
+  try{ const r=await api("/api/generate",{customers:parseInt($("customers").value),seed:parseInt($("seed").value)});
+    setBusy(false,`Generated ${fmt(r.customers)} customers and ${fmt(r.orders)} orders. Now run the daily decision.`); refresh();
+  }catch(e){ setBusy(false,"Error: "+e.message); } }
+
+async function doRun(){ if(busy)return; setBusy(true,"Running the seven steps…");
+  try{ await api("/api/run"); setBusy(false,"Done. Read the results below."); refresh(); }
+  catch(e){ setBusy(false,"Error: "+e.message+" — generate data first?"); } }
+
+async function doReset(){ if(busy)return; await api("/api/reset",{}); setBusy(false,"Reset."); refresh(); }
+
+function renderKpis(s){
+  const p=s.params||{}, o=s.overall;
+  $("kpis").innerHTML=[
+    ["Customers", fmt(s.counts.customers)],
+    ["Today's shortlist", p.shortlist!=null? fmt(p.shortlist)+`  (${p.shortlist_pct}% )` : "—"],
+    ["Messages sent", fmt(s.funnel.treatment||0)],
+    ["Incremental lift", o? pp(o.abs_lift):"—"],
+  ].map(([k,v])=>`<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
+}
+
+function renderSteps(s){
+  const p=s.params||{}, o=s.overall, f=s.funnel||{};
+  const doors=s.doors||{};
+  const steps=[
+    ["blue","1","The brand's data flows in","Orders, channel habits, price behaviour — nothing new to collect.",
+      `<b>${fmt(s.counts.customers)}</b> customers · ${fmt(s.counts.orders)} orders`, "raw history"],
+    ["blue","2","Build an understanding of each customer","Stage, buyer type, channel, reorder cycle — one profile per person.",
+      `<b>${fmt(s.counts.profiles)}</b> profiles built`, "a profile per person"],
+    ["blue","3","Pick who's worth contacting today <span class='tag red'>+ safety gate</span>","Keep only those with a real reason; consent + frequency checked up front.",
+      p.shortlist!=null?`<b>${fmt(p.shortlist)}</b> shortlisted <span class="muted">(${p.shortlist_pct}% — ${100-p.shortlist_pct}% dropped)</span>`:"—", "today's shortlist"],
+    ["orange","4","The decision engine — three doors","Reuse a saved plan (free) or, rarely, ask the AI to write one.",
+      p.plans_authored!=null?`Door1 <b>${fmt(doors.door1||0)}</b> · Door2 <b>${fmt(doors.door2||0)}</b> · Door3 <b>${fmt(doors.door3||0)}</b>`:"—",
+      (p.llm==="claude"?"AI":"rule")+` wrote ${p.plans_authored??0} plans this run`],
+    ["red","5","Safety-check the decision","Approved plan? discount in limits? in stock? Anything invalid is blocked.",
+      `<b>${fmt(f.blocked||0)}</b> blocked by safety`, "the AI never acts on its own"],
+    ["blue","6","Personalize, then send","Fill in the product, offer, and channel; a control group gets nothing.",
+      `<b>${fmt(f.treatment||0)}</b> sent · ${fmt(f.control||0)} held back`, "message delivered"],
+    ["blue","7","Prove it worked","Compare messaged vs held-back — the gap is revenue we caused.",
+      o?`lift <b>${pp(o.abs_lift)}</b> · p=${o.p_value.toFixed(4)}`:"—", "measured, not guessed"],
+  ];
+  $("steps").innerHTML=steps.map(([c,n,h,d,out,side])=>`
+    <div class="step"><div class="num ${c}">${n}</div>
+      <div><h3>${h}</h3><div class="d">${d}</div><div class="out" style="margin-top:6px">${out}</div></div>
+      <div class="side">${side}</div></div>`).join("");
+}
+
+function renderFunnel(s){
+  const total=s.counts.customers||0, f=s.funnel||{};
+  const short=(f.treatment||0)+(f.control||0)+(f.blocked||0);
+  if(!short){ $("funnel").innerHTML=`<span class="muted">Run to see the funnel.</span>`; return; }
+  const seg=[["All customers",total,"#94a3b8"],["Shortlist",short,"#2563eb"],
+    ["Sent",f.treatment||0,"#059669"],["Control",f.control||0,"#6b7280"],["Blocked",f.blocked||0,"#dc2626"]];
+  $("funnel").innerHTML=seg.map(([l,n,col])=>`<div class="fbar" style="background:${col}"><div class="n">${fmt(n)}</div><div class="l">${l}</div></div>`).join("");
+}
+
+function renderDoors(s){
+  const d=s.doors||{}, p=s.params||{};
+  const items=[
+    ["d1","Door 1 — reuse a saved plan",d.door1||0,"Code applies an existing plan. No AI, instant, free."],
+    ["d2","Door 2 — new group",d.door2||0,"AI writes one plan for the whole group, once — then cached."],
+    ["d3","Door 3 — rare VIP",d.door3||0,"AI reasons about one high-value person. Tightly capped."],
+  ];
+  $("doors").innerHTML=items.map(([c,t,n,d2])=>`<div class="door ${c}"><div class="t">${t}</div><div class="n">${fmt(n)}</div><div class="muted" style="font-size:12.5px;margin-top:4px">${d2}</div></div>`).join("");
+}
+
+function renderResult(s){
+  const o=s.overall;
+  if(!o){ $("result").innerHTML=`<div class="card"><span class="muted">No run yet.</span></div>`; $("reasons").innerHTML=`<span class="muted">No run yet.</span>`; return; }
+  const sig=o.p_value<0.05;
+  $("result").innerHTML=`
+    <div class="card big"><div class="k muted">incremental lift</div><div class="v">${pp(o.abs_lift)}</div><div class="muted" style="font-size:12px">extra buyers we caused</div></div>
+    <div class="card"><div class="k muted">messaged bought</div><div class="v" style="font-size:26px;font-weight:700">${pct(o.treat_rate)}</div><div class="muted" style="font-size:12px">${fmt(o.t_c)} / ${fmt(o.t_n)}</div></div>
+    <div class="card"><div class="k muted">control bought</div><div class="v" style="font-size:26px;font-weight:700">${pct(o.ctrl_rate)}</div><div class="muted" style="font-size:12px">${fmt(o.c_c)} / ${fmt(o.c_n)}</div></div>
+    <div class="card"><div class="k muted">p-value</div><div class="v" style="font-size:26px;font-weight:700;color:${sig?'var(--green)':'var(--red)'}">${o.p_value.toFixed(4)}</div><div class="muted" style="font-size:12px">${sig?"trustworthy":"not significant"}</div></div>`;
+  const rs=s.reasons||[];
+  $("reasons").innerHTML = rs.length? `<table>
+    <tr><th>Reason to contact</th><th>Sent</th><th>Control</th><th>Sent bought</th><th>Control bought</th><th>Lift</th><th>p</th></tr>
+    ${rs.map(r=>`<tr><td>${r.label}</td><td>${fmt(r.t_n)}</td><td>${fmt(r.c_n)}</td>
+      <td>${pct(r.treat_rate)}</td><td>${pct(r.ctrl_rate)}</td>
+      <td style="color:${r.abs_lift>=0?'var(--green)':'var(--red)'}">${pp(r.abs_lift)}</td>
+      <td>${r.p_value.toFixed(3)}</td></tr>`).join("")}</table>` : `<span class="muted">No reasons.</span>`;
+}
+
+async function renderSpotlight(){
+  let s; try{ s=await api("/api/spotlight"); }catch{ return; }
+  if(!s.found){ $("spotlight").innerHTML=`<span class="muted">Run to trace a real customer.</span>`; return; }
+  const c=s.customer, p=s.profile, d=s.decision;
+  const ch=d.channel||p.channel;
+  const trace=[
+    ["blue","1",`<b>${c.name}</b>: ${p.order_count} past orders, mainly <b>${p.top_category||'—'}</b>. Reads ${p.channel}${c.whatsapp_open_rate>c.email_open_rate?", tends to ignore email":""}.`],
+    ["blue","2",`We work out: <b>${p.lifecycle}</b>, a <b>${p.buyer_type.replace('_',' ')}</b> buyer; last order <b>${p.recency_days} days</b> ago (reorder cycle ~${p.replenish_cycle}d).`],
+    ["red","3",`Reason to contact: <b>${d.reason.replace('_',' ')}</b>. Safety gate — consent ok, under the daily cap → qualifies.`],
+    ["orange","4",`Routed through <b>${d.door.toUpperCase()}</b> — ${d.door==='door1'?'a saved plan already fit their situation (free)':d.door==='door2'?'a new group plan was written by AI':'the AI reasoned about them personally (VIP)'}.`],
+    ["red","5",`Safety-checked: ${d.block_reason?('<b style="color:var(--red)">blocked ('+d.block_reason+')</b>'):'approved &amp; safe to send'}.`],
+    ["blue","6",`Sent via <b>${ch}</b>${d.discount?` with a <b>${d.discount}% offer</b>`:` — <b>no discount</b>`}.`],
+    ["blue","7",`${p.buyer_type==='full_price'?"Why no discount? A full-price buyer — a discount would only train them to wait for sales, so we protect the habit.":"Offer matched to how price-sensitive they are."} Outcome held against control.`],
+  ];
+  $("spotlight").innerHTML=`
+    <div class="spot"><div class="who"><span class="nm">${c.name}</span>
+      <span class="muted">${p.lifecycle} · ${p.buyer_type.replace('_',' ')} · reads ${p.channel}</span>
+      <span class="badge ${d.grp==='treatment'?'on':''}">${d.grp}</span></div>
+      <div class="trace">${trace.map(([col,n,t])=>`<div class="t"><div class="n ${col}">${n}</div><div>${t}</div></div>`).join("")}</div>
+      ${d.message?`<div class="msg"><div class="muted" style="font-size:12px;margin-bottom:3px">the ${ch} they received</div><div><b>${d.message}</b></div></div>`:""}
+    </div>`;
+}
+
+function renderPlans(s){
+  const ps=s.plans||[];
+  if(!ps.length){ $("plans").innerHTML=`<span class="muted">No plans yet.</span>`; return; }
+  $("plans").innerHTML=ps.map(t=>`<div class="plan">
+    <div class="top"><span style="font-weight:600">${t.plan_key}</span>
+      <span><span class="pill ${t.source}">${t.source}</span> ${t.suppress?`<span class="pill sup">suppress</span>`:`<span class="pill">${t.discount}% off</span>`}</span></div>
+    <div style="font-weight:600;margin:2px 0">${t.headline||"—"}</div>
+    <div class="muted" style="font-size:13px">${t.body||""}</div>
+    <div class="muted" style="font-size:12px;margin-top:8px">${fmt(t.reused)} customers served · ${t.scope}</div></div>`).join("");
+}
+
+function renderObs(){
+  const obs=[
+    ["AI cost is bounded, not per-customer","The LLM writes one plan per group (Door 2) or rare VIP (Door 3) and it's cached. Run again and almost everyone flows through Door 1 — free. Cost scales with <i>situations</i>, not customers."],
+    ["Triage is where the savings are","~1-3% of customers have a real reason on any given day. Dropping the other ~98% before any AI runs is what makes the economics work."],
+    ["Full-price buyers get no discount","Encoded as a hard rule: a discount just trains a loyal full-price buyer to wait for sales. Protecting the habit is worth more than one sale."],
+    ["Honesty by construction","A held-back control group and a z-test mean we report caused revenue, not correlation. Deterministic hashing makes every run reproducible and auditable."],
+    ["Safety is a separate gate","The AI proposes; code disposes. Consent, frequency, stock, and discount caps are checked after the decision — the AI never sends anything on its own."],
+    ["Simple on purpose","One SQLite file, one module per step, plain synchronous code. Easy to read, run, and explain — the idea is the product, not the plumbing."],
+  ];
+  $("obs").innerHTML=obs.map(([t,d])=>`<div class="o"><b>${t}</b><span class="muted">${d}</span></div>`).join("");
+}
+
+async function refresh(){
+  const s=await api("/api/state");
+  renderKpis(s); renderSteps(s); renderFunnel(s); renderDoors(s); renderResult(s); renderPlans(s);
+  $("runid").textContent = s.run? "· run "+s.run : "";
+  await renderSpotlight();
+}
+
+async function init(){ await health(); renderObs(); await refresh(); }
+init();
+</script>
+</body>
+</html>

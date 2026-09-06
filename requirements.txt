@@ -1,0 +1,4 @@
+# CAC — the decisioning brain. Python 3.11+. SQLite is built in (no DB to install).
+fastapi>=0.118
+uvicorn>=0.40
+anthropic>=0.69   # optional: only used if ANTHROPIC_API_KEY is set
