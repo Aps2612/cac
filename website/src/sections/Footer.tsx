@@ -1,5 +1,5 @@
 import { Logo } from "../components/Logo";
-import { ctaHref, SITE_CONFIG } from "../config";
+import { ctaHref, SITE_CONFIG, mailHref, telHref } from "../config";
 
 export function Footer() {
   return (
@@ -10,6 +10,11 @@ export function Footer() {
           <p className="mt-3 text-[13.5px] leading-relaxed text-muted">
             Customer decisioning for D2C brands. Currently validating with selected D2C brands.
           </p>
+          <p className="mt-4 text-[13.5px] leading-relaxed text-muted">
+            {SITE_CONFIG.founderName}, Founder<br />
+            <a className="hover:text-ink" href={telHref}>{SITE_CONFIG.phone}</a> ·{" "}
+            <a className="hover:text-ink" href={mailHref()}>{SITE_CONFIG.contactEmail}</a>
+          </p>
         </div>
         <nav aria-label="Footer" className="grid grid-cols-2 gap-x-12 gap-y-2 text-[13.5px] sm:grid-cols-3">
           <a className="text-muted hover:text-ink" href="#product">Product</a>
@@ -17,7 +22,7 @@ export function Footer() {
           <a className="text-muted hover:text-ink" href="#use-cases">Use Cases</a>
           <a className="text-muted hover:text-ink" href="#pilot">Pilot</a>
           <a className="text-muted hover:text-ink" href="#about">About</a>
-          <a className="text-muted hover:text-ink" href={ctaHref("audit")}>Contact</a>
+          <a className="text-muted hover:text-ink" href={ctaHref()}>Book a Demo</a>
           <a className="text-muted hover:text-ink" href={SITE_CONFIG.demoUrl} target="_blank" rel="noopener noreferrer">Product demo ↗</a>
         </nav>
       </div>

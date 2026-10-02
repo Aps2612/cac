@@ -2,24 +2,15 @@ import { Section } from "../components/Section";
 import { Reveal } from "../components/Reveal";
 import { DecisionBadge, IllustrativeTag } from "../components/Decision";
 
-type Kind = "derived" | "constraint" | "context" | "history";
-const kindStyle: Record<Kind, string> = {
-  derived: "text-pine bg-pine-soft",
-  constraint: "text-ink bg-ink/[.07]",
-  context: "text-muted bg-paper-2",
-  history: "text-amber bg-amber-soft",
-};
-const kindLabel: Record<Kind, string> = { derived: "Derived", constraint: "Constraint", context: "Context", history: "Learned" };
-
-const rows: { k: string; v: string; kind: Kind }[] = [
-  { k: "Lifecycle", v: "Repeat customer", kind: "derived" },
-  { k: "Preferred channel", v: "WhatsApp", kind: "derived" },
-  { k: "WhatsApp consent", v: "Yes", kind: "constraint" },
-  { k: "Price sensitivity", v: "Medium", kind: "derived" },
-  { k: "Product affinity", v: "Protein / Wellness", kind: "derived" },
-  { k: "Reorder signal", v: "High", kind: "derived" },
-  { k: "Inventory", v: "Available", kind: "context" },
-  { k: "Previous campaign", v: "No discount required", kind: "history" },
+const rows: { k: string; v: string }[] = [
+  { k: "Lifecycle", v: "Repeat customer" },
+  { k: "Preferred channel", v: "WhatsApp" },
+  { k: "WhatsApp consent", v: "Yes" },
+  { k: "Price sensitivity", v: "Medium" },
+  { k: "Product affinity", v: "Protein / Wellness" },
+  { k: "Reorder signal", v: "High" },
+  { k: "Inventory", v: "Available" },
+  { k: "Previous campaign", v: "No discount required" },
 ];
 
 const checks = [
@@ -34,8 +25,8 @@ export function CustomerState() {
   return (
     <Section
       eyebrow="Customer state"
-      title="One working view of each customer — built for making decisions."
-      lede="Raw facts (orders, refunds, events, consent) stay as they are. Nirnaya derives a current customer state from them — recency, frequency, value, lifecycle, reorder likelihood — and recomputes it as new data arrives."
+      title="One customer. One clear decision."
+      lede="Nirnaya builds a simple, up-to-date picture of each customer from the data you already have — and turns it into one clear decision."
     >
       <Reveal className="mt-14">
         <div className="grid gap-4 lg:grid-cols-[1.15fr_1fr]">
@@ -72,7 +63,6 @@ export function CustomerState() {
                   <dt className="text-[13px] text-muted">{r.k}</dt>
                   <dd className="flex items-center gap-2.5">
                     <span className="text-right text-[13.5px] font-medium">{r.v}</span>
-                    <span className={`hidden w-[78px] rounded px-1.5 py-0.5 text-center font-mono text-[10px] uppercase tracking-[0.06em] sm:inline-block ${kindStyle[r.kind]}`}>{kindLabel[r.kind]}</span>
                   </dd>
                 </div>
               ))}

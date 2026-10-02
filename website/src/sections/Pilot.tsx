@@ -48,7 +48,7 @@ export function Pilot() {
             <p className="mt-6 border-t border-line pt-5 text-[13px] text-muted">
               Pilot pricing available based on use case and data complexity.
             </p>
-            <Button href={ctaHref("pilot")} className="mt-5 w-full" size="lg" arrow>Discuss a Pilot</Button>
+            <Button href={ctaHref()} className="mt-5 w-full" size="lg" arrow>Discuss a Pilot</Button>
           </div>
         </Reveal>
       </div>

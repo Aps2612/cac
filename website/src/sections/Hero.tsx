@@ -182,7 +182,7 @@ export function Hero() {
             Nirnaya helps D2C brands identify which customers need an intervention, decide what action makes sense, and measure whether it actually created incremental value.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Button href={ctaHref("audit")} size="lg" arrow>Book a Retention Audit</Button>
+            <Button href={ctaHref()} size="lg" arrow>Book a Demo</Button>
             <Button href="#how-it-works" size="lg" variant="secondary">See How It Works</Button>
           </div>
           <p className="mt-6 text-[13px] text-faint">

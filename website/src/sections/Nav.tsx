@@ -40,7 +40,7 @@ export function Nav() {
           ))}
         </ul>
         <div className="hidden lg:block">
-          <Button href={ctaHref("audit")}>Book a Retention Audit</Button>
+          <Button href={ctaHref()}>Book a Demo</Button>
         </div>
         <button
           type="button"
@@ -68,7 +68,7 @@ export function Nav() {
               </li>
             ))}
           </ul>
-          <Button href={ctaHref("audit")} className="mt-4 w-full" size="lg">Book a Retention Audit</Button>
+          <Button href={ctaHref()} className="mt-4 w-full" size="lg">Book a Demo</Button>
         </div>
       )}
     </header>

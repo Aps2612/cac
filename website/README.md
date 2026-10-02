@@ -19,24 +19,19 @@ npm run preview    # serve the production build
 
 ## Change links / contact details
 
-Everything lives in **`src/config.ts`** (`SITE_CONFIG`). Each value can also be
-set without code changes as an environment variable — in `.env`, or in Render →
-Environment — and takes effect on the next deploy:
+Everything lives in **`src/config.ts`** (`SITE_CONFIG`): demo URL, founder
+name, email, phone, form endpoint and an optional booking (Calendly) link.
 
-| Variable | Purpose |
-|---|---|
-| `VITE_BOOKING_URL` | Calendly / Cal.com / Tally / Google Form for "Book a Retention Audit" and "Discuss a Pilot" |
-| `VITE_CONTACT_EMAIL` | Used as a `mailto:` fallback when no booking URL is set, and shown in the contact section |
-| `VITE_DEMO_URL` | Product demo link (defaults to the current Render prototype) |
-| `VITE_SITE_URL` | Public URL, used for canonical + Open Graph tags (update if you add a custom domain) |
-| `VITE_FOUNDER_LINKEDIN_URL` | Optional link in the About section |
+## The "Book a Demo" form
 
-CTA resolution: booking URL → mailto → on-page `#contact` section.
-Until one of the first two is set, the contact section says "Audit bookings
-are opening shortly." — **set at least one before sharing the site.**
+Every "Book a Demo" / "Discuss a Pilot" button scrolls to the form at the bottom
+of the page. Submissions are emailed to `apsingh1722@gmail.com` through
+**FormSubmit** (free, no account, no API key, nothing secret in the code).
 
-If you change `VITE_SITE_URL`, also update `public/robots.txt` and
-`public/sitemap.xml`.
+**One-time activation:** the first submission makes FormSubmit email
+apsingh1722@gmail.com asking you to confirm. Click **Activate**; after that every
+lead arrives in that inbox. If sending ever fails, the visitor is shown the email
+and phone instead.
 
 ## Structure
 

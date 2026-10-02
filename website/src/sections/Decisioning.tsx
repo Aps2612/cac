@@ -10,9 +10,7 @@ const stages = [
 const noActionReasons = [
   "Purchased three days ago — nothing to remind them of",
   "Already contacted yesterday — another message is fatigue",
-  "Preferred channel isn't consented, and no other channel fits",
-  "The product they'd reorder is out of stock",
-  "No meaningful signal — contact would be noise",
+  "No consent on the channel they prefer",
 ];
 
 export function Decisioning() {

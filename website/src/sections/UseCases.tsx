@@ -32,13 +32,6 @@ export function UseCases() {
             </article>
           </Reveal>
         ))}
-        <Reveal delay={320}>
-          <div className="flex h-full flex-col justify-center rounded-2xl bg-ink p-6 text-paper">
-            <p className="text-[15px] leading-relaxed text-paper/75">
-              Initial-focus decisions are rules-based and transparent today, and are the scope we pilot. Learned decisioning builds on top as outcome data accumulates.
-            </p>
-          </div>
-        </Reveal>
       </div>
     </Section>
   );

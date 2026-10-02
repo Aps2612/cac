@@ -3,7 +3,6 @@ import { Reveal } from "../components/Reveal";
 
 const inputs = ["Shopify / commerce platform", "Customer database", "CRM", "WhatsApp", "Email", "Inventory"];
 const outputs = ["WhatsApp provider", "Email platform", "SMS", "CRM audiences"];
-const layer = ["Customer state", "Eligibility & consent", "Business rules", "Decision log", "Measurement"];
 
 function Col({ title, items, sub }: { title: string; items: string[]; sub: string }) {
   return (
@@ -44,11 +43,7 @@ export function Stack() {
           <div className="rounded-2xl bg-ink p-5 text-paper shadow-[0_24px_60px_-30px_rgba(11,15,14,.6)]">
             <p className="flex items-center gap-2 text-[15px] font-semibold"><span className="pulse-dot h-1.5 w-1.5 rounded-full bg-mint" /> Nirnaya</p>
             <p className="mt-1 text-[12.5px] text-paper/55">Decisioning layer</p>
-            <ul className="mt-4 space-y-1.5">
-              {layer.map((l) => (
-                <li key={l} className="rounded-md bg-white/[.06] px-3 py-2 font-mono text-[12px] text-paper/80">{l}</li>
-              ))}
-            </ul>
+            <p className="mt-4 text-[14px] leading-relaxed text-paper/80">Decides who to act on, what to do, which channel — or no action.</p>
           </div>
           <Arrow />
           <Col title="Your activation" sub="Where decisions are delivered" items={outputs} />
