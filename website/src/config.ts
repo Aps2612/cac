@@ -24,6 +24,13 @@ export const SITE_CONFIG = {
     env.VITE_FORM_ENDPOINT ||
     `https://formsubmit.co/ajax/${env.VITE_CONTACT_EMAIL || "apsingh1722@gmail.com"}`,
 
+  /**
+   * Recommended: a free Web3Forms access key (https://web3forms.com — enter
+   * apsingh1722@gmail.com, the key arrives by email). It is safe to be public.
+   * When set, the form uses Web3Forms instead of FormSubmit.
+   */
+  web3formsKey: env.VITE_WEB3FORMS_KEY || "",
+
   /** Optional Calendly / Cal.com link, shown beside the form when set. */
   bookingUrl: env.VITE_BOOKING_URL || "",
 } as const;

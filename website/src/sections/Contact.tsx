@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Reveal } from "../components/Reveal";
 import { SITE_CONFIG, mailHref, telHref } from "../config";
+import { sendLead, leadMailto, type Lead } from "../lib/sendLead";
 
 type Status = "idle" | "sending" | "sent" | "error";
 
@@ -20,30 +21,21 @@ function Field({ label, name, type = "text", required = false, placeholder, auto
 
 export function Contact() {
   const [status, setStatus] = useState<Status>("idle");
+  const [lead, setLead] = useState<Lead | null>(null);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
     const data = Object.fromEntries(new FormData(form).entries()) as Record<string, string>;
     if (data._honey) return; // spam bot
+    const next: Lead = { name: data.name, company: data.company, email: data.email, phone: data.phone, message: data.message };
+    setLead(next);
     setStatus("sending");
-    try {
-      const res = await fetch(SITE_CONFIG.formEndpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({
-          ...data,
-          _subject: `Nirnaya demo request — ${data.company || data.name}`,
-          _template: "table",
-          _captcha: "false",
-          _replyto: data.email,
-        }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok || json.success === false || json.success === "false") throw new Error("send failed");
+    const result = await sendLead(next);
+    if (result.ok) {
       setStatus("sent");
       form.reset();
-    } catch {
+    } else {
       setStatus("error");
     }
   }
@@ -107,11 +99,14 @@ export function Contact() {
                 >
                   {status === "sending" ? "Sending…" : "Book a Demo"}
                 </button>
-                {status === "error" && (
-                  <p className="text-[13.5px] text-amber-soft" role="alert">
-                    Something went wrong sending the form. Please email{" "}
-                    <a href={mailHref("Nirnaya demo request")} className="underline">{SITE_CONFIG.contactEmail}</a> or call {SITE_CONFIG.phone}.
-                  </p>
+                {status === "error" && lead && (
+                  <div className="rounded-xl border border-amber/40 bg-amber/10 p-4 text-[13.5px] text-paper/85" role="alert">
+                    <p>We couldn't send that automatically. Your details are still here — send them in one click:</p>
+                    <a href={leadMailto(lead)} className="mt-3 inline-flex h-10 items-center rounded-full bg-paper px-4 text-[14px] font-medium text-ink hover:bg-white">
+                      Send by email instead
+                    </a>
+                    <p className="mt-3 text-paper/60">Or call <a href={telHref} className="underline">{SITE_CONFIG.phone}</a>.</p>
+                  </div>
                 )}
                 <p className="text-[12px] text-paper/40">Your details go straight to the founder. We don't share them.</p>
               </form>
