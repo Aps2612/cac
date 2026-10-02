@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://nirnaya-website.onrender.com/sitemap.xml

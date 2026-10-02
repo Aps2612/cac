@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-ink: #0b0f0e;
+  --color-ink-2: #1a201e;
+  --color-ink-3: #2a312e;
+  --color-paper: #fafaf7;
+  --color-paper-2: #f3f2ed;
+  --color-line: #e4e2db;
+  --color-line-dark: #2c3330;
+  --color-muted: #5d6461;
+  --color-faint: #8b918e;
+
+  --color-pine: #0f5c4a;
+  --color-pine-2: #137a61;
+  --color-pine-soft: #e3efe9;
+  --color-mint: #7fd4b3;
+
+  --color-amber: #a65f0b;
+  --color-amber-soft: #f6ead8;
+}
+
+@layer base {
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+    font-feature-settings: "ss01", "cv11";
+    text-rendering: optimizeLegibility;
+  }
+  ::selection { background: var(--color-pine-soft); color: var(--color-ink); }
+  :focus-visible { outline: 2px solid var(--color-pine-2); outline-offset: 3px; border-radius: 6px; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+}
+
+@layer components {
+  .container-x { @apply mx-auto w-full max-w-[1180px] px-5 sm:px-8; }
+  .eyebrow { @apply font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted; }
+  .h-section { @apply text-[2rem] leading-[1.1] font-semibold tracking-[-0.025em] sm:text-[2.6rem]; text-wrap: balance; }
+  .lede { @apply text-[1.05rem] leading-relaxed text-muted sm:text-lg; text-wrap: pretty; }
+  .card { @apply rounded-2xl border border-line bg-white; }
+  .grid-bg {
+    background-image:
+      linear-gradient(to right, rgba(11,15,14,0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(11,15,14,0.045) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+  .grid-bg-dark {
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+}
+
+/* Reveal-on-scroll */
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1); }
+.reveal.is-in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } }
+
+/* Flowing dash along connectors */
+@keyframes dash { to { stroke-dashoffset: -24; } }
+.flow-line { stroke-dasharray: 4 8; animation: dash 1.6s linear infinite; }
+
+@keyframes fadeSwap { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.fade-swap { animation: fadeSwap .45s ease both; }
+
+@keyframes pulseDot { 0%,100% { opacity: .35 } 50% { opacity: 1 } }
+.pulse-dot { animation: pulseDot 2.2s ease-in-out infinite; }
